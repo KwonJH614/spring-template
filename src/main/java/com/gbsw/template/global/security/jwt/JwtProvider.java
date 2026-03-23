@@ -28,33 +28,33 @@ public class JwtProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateAccessToken(String username) {
-        return generateToken(username, jwtProperties.getAccessTokenExpiration());
+    public String generateAccessToken(Long userId) {
+        return generateToken(userId, jwtProperties.getAccessTokenExpiration());
     }
 
-    public String generateRefreshToken(String username) {
-        return generateToken(username, jwtProperties.getRefreshTokenExpiration());
+    public String generateRefreshToken(Long userId) {
+        return generateToken(userId, jwtProperties.getRefreshTokenExpiration());
     }
 
-    private String generateToken(String username, long expiration) {
+    private String generateToken(Long userId, long expiration) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
-                .subject(username)
+                .subject(String.valueOf(userId))
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
                 .compact();
     }
 
-    public String getUsernameFromToken(String token) {
-        return parseClaims(token).getSubject();
+    public Long getUserIdFromToken(String token) {
+        return Long.parseLong(parseClaims(token).getSubject());
     }
 
     public Authentication getAuthentication(String token) {
-        String username = getUsernameFromToken(token);
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        Long userId = getUserIdFromToken(token);
+        UserDetails userDetails = userDetailsService.loadUserByUserId(userId);
         return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
     }
 
