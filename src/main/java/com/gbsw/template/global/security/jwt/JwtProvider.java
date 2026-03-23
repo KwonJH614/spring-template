@@ -28,28 +28,41 @@ public class JwtProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    private static final String CLAIM_TYPE = "type";
+    private static final String TYPE_ACCESS = "access";
+    private static final String TYPE_REFRESH = "refresh";
+
     public String generateAccessToken(Long userId) {
-        return generateToken(userId, jwtProperties.getAccessTokenExpiration());
+        return generateToken(userId, jwtProperties.getAccessTokenExpiration(), TYPE_ACCESS);
     }
 
     public String generateRefreshToken(Long userId) {
-        return generateToken(userId, jwtProperties.getRefreshTokenExpiration());
+        return generateToken(userId, jwtProperties.getRefreshTokenExpiration(), TYPE_REFRESH);
     }
 
-    private String generateToken(Long userId, long expiration) {
+    private String generateToken(Long userId, long expiration, String type) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
+                .claim(CLAIM_TYPE, type)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
                 .compact();
     }
 
+    public boolean isRefreshToken(String token) {
+        return TYPE_REFRESH.equals(parseClaims(token).get(CLAIM_TYPE, String.class));
+    }
+
     public Long getUserIdFromToken(String token) {
-        return Long.parseLong(parseClaims(token).getSubject());
+        try {
+            return Long.parseLong(parseClaims(token).getSubject());
+        } catch (NumberFormatException e) {
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
     }
 
     public Authentication getAuthentication(String token) {

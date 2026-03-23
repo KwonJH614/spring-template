@@ -54,7 +54,7 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public TokenResponse refresh(String refreshToken) {
-        if (!jwtProvider.validateToken(refreshToken)) {
+        if (!jwtProvider.validateToken(refreshToken) || !jwtProvider.isRefreshToken(refreshToken)) {
             throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
